@@ -5,7 +5,7 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const hre = require("hardhat");
-import { Framework } from "@superfluid-finance/sdk-core";
+const { Framework } = require("@superfluid-finance/sdk-core");
 
 
 async function main() {
@@ -37,7 +37,7 @@ async function main() {
   );
   
   let streamId = "someid";
-  let rate = 10 ^ 10;
+  let rate = 10 ** 10;
   
   // start stream 
   let startTxn = await contract.start(streamId, rate, fDaiXAddress);
@@ -56,7 +56,7 @@ async function main() {
   let streamPaymentToken = await hre.ethers.getContractAt("ISuperToken", fDaiXAddress);
 
 
-  let streamPaymentTokenName = streamPaymentToken.name;
+  let streamPaymentTokenName = await streamPaymentToken.name();
   let participant1_balance = await streamPaymentToken.balanceOf(participant_1_signer.address);
   let participant2_balance = await streamPaymentToken.balanceOf(participant_2_signer.address);
 
@@ -66,8 +66,9 @@ async function main() {
   
   // the superfluid object
   const sf  = await Framework.create({
-    chainId: hre.ethers.provider.getChainId(),
-    provider: hre.ethers.provider
+    chainId: 31337, // todo: fix this
+    provider: hre.ethers.provider,
+    resolverAddress: process.env.RESOLVER_ADDRESS // only needed to pass for local chain
   })
 
   // todo: if the balance is zero, we check which asset is wrapped, and check its balance
@@ -103,22 +104,34 @@ async function main() {
   // next we use superfluid sdk-core to allow operator permission to our smart contract to 
   // allow flow. Ofc we first have to check if it already exists, if it  does then we do nothing.
 
-  const operatorPermissionsExist = streamPaymentToken.isOperatorFor(contract.address, participant_1_signer.address);
+  const operatorPermissionsExist = await streamPaymentToken.isOperatorFor(contract.address, participant_1_signer.address);
 
   if (operatorPermissionsExist == false) {
     let updateFlowOperatorOperation = await sf.cfaV1.updateFlowOperatorPermissions({
       flowOperator: contract.address,
       permissions: 5, // create or delete
-      flowRateAllowance: 10 ^ 18,
+      flowRateAllowance: 3858024691358020, // 1k per month, todo: https://docs.superfluid.finance/superfluid/developers/solidity-examples/cfa-access-control-list-acl#flow-rate-allowance
       superToken: streamPaymentToken.address
     });
     let txn = await updateFlowOperatorOperation.exec(participant_1_signer);
-    console.log($`Granted ACL to ${contract.address}. ${txn}`);
+    let txnReceipt = await txn.wait();
+    console.log(`Granted ACL to ${contract.address}. ${JSON.stringify(txnReceipt)}`);
   }
-
+  
   // next we need to call join function, which'd create flow on operators behalf
-  let joinTxn = await contract.join(streamId);
+  let joinTxn = await contract.connect(participant_1_signer).join(streamId);
   let joinTxnReceipt = await joinTxn.wait();
+
+  // let createFlowOperation = sf.cfaV1.createFlow(
+  //   {
+  //     sender: participant_1_signer.address,
+  //     receiver: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", // TODO: fix
+  //     superToken: fDaiXAddress,
+  //     flowRate: rate
+  //   }
+  // )
+  // let createFlowTxn = await createFlowOperation.exec(provider_1_signer);
+  // let createFlowTxnReceipt = await createFlowTxn.wait();
 
   // next calling hasJoined should return true
   let hasJoined = await contract.hasJoined(streamId, participant_1_signer.address);

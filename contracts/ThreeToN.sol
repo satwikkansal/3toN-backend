@@ -87,7 +87,7 @@ contract ThreeToN {
     function join(string memory sid) external {
         // todo: assert if msg.sender has granted access control 
         StreamData memory data = streams[sid];
-        cfaV1.createFlowByOperator(msg.sender, data.owner, ISuperfluidToken(data.token), data.rate);
+        cfaV1.createFlowByOperator(msg.sender, data.owner, ISuperfluidToken(data.token), data.rate, "0x");
     }
 
     function hasJoined(string memory sid, address paritcipant_address) external view returns (bool) {
