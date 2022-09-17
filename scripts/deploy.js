@@ -5,10 +5,11 @@
 // will compile your contracts, add the Hardhat Runtime Environment's members to the
 // global scope, and execute the script.
 const hre = require("hardhat");
+import { Framework } from "@superfluid-finance/sdk-core";
 
 
 async function main() {
-
+  
   const Contract = await hre.ethers.getContractFactory("ThreeToN");
   const hostAddressMumbai = "0xEB796bdb90fFA0f28255275e16936D25d3418603";
   const cfaAddressMumbai = "0x49e565Ed1bdc17F3d220f72DF0857C26FA83F873";
@@ -52,7 +53,9 @@ async function main() {
   // Participant 1 has to join the stream now
 
   // but first we have to make sure they have the stream token.
-  let streamPaymentToken = await hre.ethers.getContractAt("IERC20", fDaiXAddress);
+  let streamPaymentToken = await hre.ethers.getContractAt("ISuperToken", fDaiXAddress);
+
+
   let streamPaymentTokenName = streamPaymentToken.name;
   let participant1_balance = await streamPaymentToken.balanceOf(participant_1_signer.address);
   let participant2_balance = await streamPaymentToken.balanceOf(participant_2_signer.address);
@@ -60,18 +63,70 @@ async function main() {
   // todo: test it with non hardhat accounts
   console.log(`Participant 1 ${participant_1_signer.address} has ${participant1_balance} ${streamPaymentTokenName} tokens`);
   console.log(`Participant 2 ${participant_2_signer.address} has ${participant2_balance} tokens`)
- 
+  
+  // the superfluid object
+  const sf  = await Framework.create({
+    chainId: hre.ethers.provider.getChainId(),
+    provider: hre.ethers.provider
+  })
+
   // todo: if the balance is zero, we check which asset is wrapped, and check its balance
   // if the wrapped asset balance exists we add an approve + upgrade operation
+  if (participant1_balance == 0) {
+    console.log(`Participant 1 has zero balance of superTokens, checking if it has underlying tokens to be upgraded.`)
+    let underlyingTokenAddress = await streamPaymentToken.getUnderlyingToken();
+    let underlyingToken = await hre.ethers.getContractAt("IERC20", underlyingTokenAddress);
+    let underlyingTokenBalance = await underlyingToken.balanceOf(participant_1_signer.address);
+    if (underlyingTokenBalance == 0) {
+      console.log(`Please top up ${underlyingToken.name} or ${streamPaymentToken.name}`);
+    } else {
+      // time to convert some tokens
+      // first need to check if the address has already given the one time approval
+      let allowance = await underlyingToken.allowance(participant_1_signer.address, streamPaymentToken.address);
+      if (allowance == 0) {
+        // Giving superToken the permission to spend
+        let approvalTxn = await underlyingToken.connect(participant_1_signer).approve(streamPaymentToken.address);
+        await approvalTxn.wait();
+      }
+
+      // now we need to upgrade
+      streamPaymentToken.connect(participant_1_signer).upgrade(underlyingTokenBalance);
+    }
+  }
+
+  // we do similar for participant 2
+  // ...
+
+  //  now that we're pretty sure SuperToken balance exists, we can prepeare join
+
 
   // next we use superfluid sdk-core to allow operator permission to our smart contract to 
   // allow flow. Ofc we first have to check if it already exists, if it  does then we do nothing.
 
+  const operatorPermissionsExist = streamPaymentToken.isOperatorFor(contract.address, participant_1_signer.address);
+
+  if (operatorPermissionsExist == false) {
+    let updateFlowOperatorOperation = await sf.cfaV1.updateFlowOperatorPermissions({
+      flowOperator: contract.address,
+      permissions: 5, // create or delete
+      flowRateAllowance: 10 ^ 18,
+      superToken: streamPaymentToken.address
+    });
+    let txn = await updateFlowOperatorOperation.exec(participant_1_signer);
+    console.log($`Granted ACL to ${contract.address}. ${txn}`);
+  }
+
   // next we need to call join function, which'd create flow on operators behalf
+  let joinTxn = await contract.join(streamId);
+  let joinTxnReceipt = await joinTxn.wait();
 
   // next calling hasJoined should return true
+  let hasJoined = await contract.hasJoined(streamId, participant_1_signer.address);
 
-  //
+  console.log(`${participant_1_signer.address} has joined : ${hasJoined}`);
+
+  let earnings = await contract.earningSoFar(streamId);
+  console.log(`Earnings so far are ${earnings}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

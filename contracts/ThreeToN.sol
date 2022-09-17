@@ -90,7 +90,7 @@ contract ThreeToN {
         cfaV1.createFlowByOperator(msg.sender, data.owner, ISuperfluidToken(data.token), data.rate);
     }
 
-    function hasJoined(string memory sid) external view returns (bool) {
+    function hasJoined(string memory sid, address paritcipant_address) external view returns (bool) {
 
         StreamData memory data = streams[sid];
 
@@ -99,7 +99,7 @@ contract ThreeToN {
         uint256 deposit;
         uint256 owedDeposit;
 
-        (timestamp, flowRate, deposit, owedDeposit) = cfaV1.cfa.getFlow(ISuperfluidToken(data.token), msg.sender, data.owner);
+        (timestamp, flowRate, deposit, owedDeposit) = cfaV1.cfa.getFlow(ISuperfluidToken(data.token), paritcipant_address, data.owner);
         return flowRate >= data.rate;
     }
 
