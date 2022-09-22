@@ -36,6 +36,8 @@
   "dependencies": {
     "@superfluid-finance/ethereum-contracts": "^1.4.0",
     "@superfluid-finance/sdk-core": "^0.5.6",
+    "@unlock-protocol/contracts": "^0.0.9",
+    "@xmtp/xmtp-js": "^6.3.2",
     "dotenv": "^16.0.2",
     "graphql": "^16.6.0"
   }

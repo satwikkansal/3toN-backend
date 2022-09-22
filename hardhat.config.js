@@ -8,10 +8,10 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-          url: process.env.GOERLI_RPC,
-          gas: 2100000,
+          url: process.env.POLYGON_RPC,
+          gas: 21000000,
         },
-        gas: 2100000,
+        gas: 21000000,
     },
     mumbai: {
       url: process.env.MUMBAI_RPC,
@@ -25,6 +25,6 @@ module.exports = {
     }
   },
   etherscan: {
-    apiKey: process.env.POLYGONSCAN_API_KEY
+    apiKey: process.env.ETHERSCAN_API_KEY,
   }
 };
