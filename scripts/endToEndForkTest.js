@@ -44,7 +44,6 @@ networks = {
 
 
 async function main() {
-  
   const Contract = await hre.ethers.getContractFactory("ThreeToN");
   let network = "polygon";
   let hostAddress = networks[network]['hostAddress'];
@@ -54,17 +53,13 @@ async function main() {
   let daiFaucet = networks[network]['daiFaucet'];
   let daiXfaucet = networks[network]['daiXfaucet'];
 
+  
   const contract = await Contract.deploy(hostAddress, unlockAddress);
-
   await contract.deployed();
 
   console.log(
     `Deployed to ${contract.address}`
   );
-  
-  const unlockMappingAbi = [{"inputs":[{"internalType":"address","name":"_lockAddress","type":"address"},{"internalType":"address","name":"_tokenAddress","type":"address"},{"internalType":"uint256","name":"_minAmount","type":"uint256"}],"name":"createMapping","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_lockAddress","type":"address"},{"internalType":"address","name":"_keyOwner","type":"address"},{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"bool","name":"isValidKey","type":"bool"}],"name":"hasValidKey","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"minAmounts","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"tokenAddresses","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}]
-  const unlockMappingContract = await hre.ethers.Contract(networks[network]['unlockMappingAddress'], unlockMappingAbi);
-  
 
   const participant_1_signer = await hre.ethers.getImpersonatedSigner(networks[network]["randomAddress1"]);
   const participant_2_signer = await hre.ethers.getImpersonatedSigner(networks[network]["randomAddress2"]);

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.17;
 
+// Uncomment this line to use console.log
+// import "hardhat/console.sol";
+
 import { 
     ISuperfluid 
 } from "@superfluid-finance/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol"; //"@superfluid-finance/ethereum-monorepo/packages/ethereum-contracts/contracts/interfaces/superfluid/ISuperfluid.sol";
@@ -24,8 +27,31 @@ import {
 import {IUnlockV11} from  "@unlock-protocol/contracts/dist/Unlock/IUnlockV11.sol";
 import {IPublicLockV11} from  "@unlock-protocol/contracts/dist/PublicLock/IPublicLockV11.sol";
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
+
+// import {ILockValidKeyHook} from "@unlock-protocol/contracts/dist/Hooks/ILockValidKeyHook.sol";
+
+
+// interface StreamAccessChecker {
+//      function hasJoined(string memory sid, address paritcipant_address) external view returns (bool); 
+// }
+
+
+// contract StreamAccessHook is ILockValidKeyHook {
+//     string stream_id;
+//     StreamAccessChecker accessChecker;
+
+//     constructor (string memory sid) {
+//         // the calling contract should implement the interface
+//         accessChecker = StreamAccessChecker(msg.sender);
+//         stream_id = sid;
+//     }
+
+//     function hasValidKey(address _lockAddress, address _keyOwner, uint256, // _expirationTimestamp, 
+//                          bool isValidKey) external view returns (bool) {
+//         if (isValidKey) return true;
+//         return accessChecker.hasJoined(stream_id, _keyOwner);
+//     }
+// }
 
 
 contract ThreeToN {
@@ -68,7 +94,7 @@ contract ThreeToN {
     
     unlockContract = IUnlockV11(unlockFactoryAddress);
     ISuperfluid host = ISuperfluid(hostAddress);
-
+    
     //initialize InitData struct, and set equal to cfaV1
     cfaV1 = CFAv1Library.InitData(
         host,
