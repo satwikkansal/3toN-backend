@@ -7,7 +7,7 @@
 const hre = require("hardhat");
 const { Framework } = require("@superfluid-finance/sdk-core");
 const { BigNumber } = require("ethers");
-
+const { networks } = require("./networkConfig.js");
 
 
 // todo; create it properly with network addresses being easier to manage.
@@ -16,36 +16,9 @@ const { BigNumber } = require("ethers");
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
-networks = {
-  polygon: {
-    hostAddress: "0x3E14dC1b13c488a8d5D310918780c983bD5982E7",
-    unlockAddress: "0xE8E5cd156f89F7bdB267EabD5C43Af3d5AF2A78f",
-    unlockMappingAddress: "0xd4C62b84eb42c03A118639c39dF1Fb680FF9E776",
-    daiXAddress: "0x1305F6B6Df9Dc47159D12Eb7aC2804d4A33173c2",
-    usdcXAddress: "0xCAa7349CEA390F89641fe306D93591f87595dc1F",
-    daiXfaucet: "0x703a1be86986a333b02f6c4a85eeb0dded23b1b8",
-    daiFaucet: "0x06959153b974d0d5fdfd87d561db6d8d4fa0bb0b", // has matic and dai
-    usdcXfaucet: "0x6583f33895b538dfdeee234f2d34df1033655de1",
-    superfluidResolver: "0xE0cc76334405EE8b39213E620587d815967af39C",
-    randomAddress1: "0x6e685a45db4d97ba160fa067cb81b40dfed47245", // has lot of matic
-    randomAddress2: "0xd5c08681719445a5fdce2bda98b341a49050d821" // has lot of matic
-  },
-  optimism: {
-    hostAddress: "0x567c4B141ED61923967cA25Ef4906C8781069a10",
-    unlockAddress: "0x99b1348a9129ac49c6de7F11245773dE2f51fB0c",
-    daiXAddress: "0x7d342726b69c28d942ad8bfe6ac81b972349d524",
-    usdcXAddress: "0x8430f084b939208e2eded1584889c9a66b90562f",
-    superfluidResolver: "0x743B5f46BC86caF41bE4956d9275721E0531B186"
-  },
-  goerli: {
-
-  }
-}
-
-
 async function main() {
   const Contract = await hre.ethers.getContractFactory("ThreeToN");
-  let network = "polygon";
+  let network = "polygon_local_fork";
   let hostAddress = networks[network]['hostAddress'];
   let unlockAddress = networks[network]['unlockAddress'];
   let daiXAddress = networks[network]['daiXAddress'];
@@ -53,7 +26,6 @@ async function main() {
   let daiFaucet = networks[network]['daiFaucet'];
   let daiXfaucet = networks[network]['daiXfaucet'];
 
-  
   const contract = await Contract.deploy(hostAddress, unlockAddress);
   await contract.deployed();
 
@@ -86,7 +58,6 @@ async function main() {
   // but first we have to make sure they have the stream token.
   let streamPaymentToken = await hre.ethers.getContractAt("ISuperToken", daiXAddress);
 
-
   let streamPaymentTokenName = await streamPaymentToken.name();
   let participant1_balance = await streamPaymentToken.balanceOf(participant_1_signer.address);
   let participant2_balance = await streamPaymentToken.balanceOf(participant_2_signer.address);
@@ -101,7 +72,6 @@ async function main() {
     provider: hre.ethers.provider,
     resolverAddress: networks[network]["superfluidResolver"] // only needed to pass for local chain
   })
-
 
   // todo: if the balance is zero, we check which asset is wrapped, and check its balance
   // if the wrapped asset balance exists we add an approve + upgrade operation
