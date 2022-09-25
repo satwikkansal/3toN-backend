@@ -5,7 +5,7 @@ const networks = {
       unlockAddress: "0xE8E5cd156f89F7bdB267EabD5C43Af3d5AF2A78f",
       unlockMappingAddress: "0xd4C62b84eb42c03A118639c39dF1Fb680FF9E776",
       daiXAddress: "0x1305F6B6Df9Dc47159D12Eb7aC2804d4A33173c2",
-      usdcXAddress: "0xCAa7349CEA390F89641fe306D93591f87595dc1F",
+      usdcXAddressgst: "0xCAa7349CEA390F89641fe306D93591f87595dc1F",
       daiXfaucet: "0x703a1be86986a333b02f6c4a85eeb0dded23b1b8",
       daiFaucet: "0x06959153b974d0d5fdfd87d561db6d8d4fa0bb0b", // has matic and dai
       usdcXfaucet: "0x6583f33895b538dfdeee234f2d34df1033655de1",
