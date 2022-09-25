@@ -8,7 +8,7 @@ This repository contains the smart-contract code for the same.
 
 - Polygon: `0x0fD0A669B4431d1bc059A21541D71844914e9a73`
 - Goerli: `0x0fD0A669B4431d1bc059A21541D71844914e9a73`
-
+- Optimism: `0x93e74d0f849c5d3E842791801Ba8d66d50D730bF`
 
 ## About the code
 
