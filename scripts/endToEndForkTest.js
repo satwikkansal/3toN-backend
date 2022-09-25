@@ -18,7 +18,7 @@ const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay))
 
 async function main() {
   const Contract = await hre.ethers.getContractFactory("ThreeToN");
-  let network = "polygon_local_fork";
+  let network = "goerli";
   let hostAddress = networks[network]['hostAddress'];
   let unlockAddress = networks[network]['unlockAddress'];
   let daiXAddress = networks[network]['daiXAddress'];
@@ -37,14 +37,14 @@ async function main() {
   const participant_2_signer = await hre.ethers.getImpersonatedSigner(networks[network]["randomAddress2"]);
   
   const faucet_signer = await hre.ethers.getImpersonatedSigner(daiFaucet);
-  const super_faucet_signer = await hre.ethers.getImpersonatedSigner(daiXfaucet);
+  // const super_faucet_signer = await hre.ethers.getImpersonatedSigner(daiXfaucet);
 
   let streamId = "someid";
   let streamName = "My stream rocks";
   let rate = 10 ** 10;
   
   // start stream 
-  let startTxn = await contract.start(streamId, rate, daiXAddress, streamName);
+  let startTxn = await contract.start(streamId, rate, daiXAddress, streamName, 1000, 0);
   let startTxnReceipt = await startTxn.wait();
 
   console.log(`Stream ${streamId} started}`);
@@ -96,7 +96,7 @@ async function main() {
       console.log(`Participant 1 has approved allowance of ${allowance} ${underlyingTokenName} to ${streamPaymentTokenName}`);
       if (allowance == 0) {
         // Giving superToken the permission to spend
-        let approvalTxn = await underlyingToken.connect(participant_1_signer).approve(streamPaymentToken.address, BigNumber.from(10).pow(20));
+        let approvalTxn = await underlyingToken.connect(participant_1_signer).approve(streamPaymentToken.address, underlyingTokenBalance);
         await approvalTxn.wait();
         let allowanceNew = await underlyingToken.allowance(participant_1_signer.address, streamPaymentToken.address);
         console.log(`Allowance update to ${allowanceNew} ${underlyingTokenName}`);
@@ -122,10 +122,13 @@ async function main() {
   // next we use superfluid sdk-core to allow operator permission to our smart contract to 
   // allow flow. Ofc we first have to check if it already exists, if it  does then we do nothing.
 
-  let operatorPermissionsExist = await streamPaymentToken.isOperatorFor(contract.address, participant_1_signer.address);
+  let flowOperatorData = await sf.cfaV1.getFlowOperatorData(
+    {superToken: daiXAddress, sender: participant_1_signer.address, flowOperator: contract.address,
+      providerOrSigner: hre.ethers.provider
+    });
 
-  if (operatorPermissionsExist == false) {
-    console.log(`Operator permissions don't exist for participant 1. Getting them`)
+  if (flowOperatorData.flowRateAllowance < streamData.rate) {
+    console.log(`Enough Operator permissions don't exist for participant 1. Getting them`)
     let updateFlowOperatorOperation = await sf.cfaV1.updateFlowOperatorPermissions({
       flowOperator: contract.address,
       permissions: 5, // create or delete
@@ -134,7 +137,13 @@ async function main() {
     });
     let txn = await updateFlowOperatorOperation.exec(participant_1_signer);
     let txnReceipt = await txn.wait();
-    operatorPermissionsExist = await streamPaymentToken.isOperatorFor(contract.address, participant_1_signer.address);
+
+    let flowOperatorData = await sf.cfaV1.getFlowOperatorData(
+      {superToken: daiXAddress, sender: participant_1_signer.address, flowOperator: contract.address,
+        providerOrSigner: hre.ethers.provider
+      });
+  
+    let operatorPermissionsExist = flowOperatorData.flowRateAllowance < streamData.rate;
     console.log(`Granted ACL to ${contract.address}: ${operatorPermissionsExist}`);
   };
 
@@ -195,25 +204,22 @@ async function main() {
     i += 1;
   }
 
-  let flowInfo = await sf.cfaV1.getAccountFlowInfo({
-    superToken: streamData.token,
-    account: streamData.owner,
-    providerOrSigner: participant_1_signer
-  });
-
-  let onemoreflow = await sf.cfaV1.getFlow({
-    superToken: streamData.token,
-    receiver: streamData.owner,
-    sender: participant_1_signer.address,
-    providerOrSigner: participant_1_signer
-  })
-
-  const leaveTxn = await contract.connect(participant_1_signer).leaveStream(streamId);
+  let leaveTxn = await contract.connect(participant_1_signer).leaveStream(streamId);
   await leaveTxn.wait();
 
   hasJoined = await contract.hasJoined(streamId, participant_1_signer.address);
-  console.log(`Participant 1 left: ${hasJoined}`);
-  
+  console.log(`Participant 1 left: ${!hasJoined}`);
+
+  // can join after leaving
+  joinTxn = await contract.connect(participant_1_signer).join(streamId);
+  joinTxnReceipt = await joinTxn.wait();
+
+  hasJoined = await contract.hasJoined(streamId, participant_1_signer.address);
+  console.log(`Participant 1 joined again: ${hasJoined}`);
+
+  // leave finally
+  leaveTxn = await contract.connect(participant_1_signer).leaveStream(streamId);
+  leaveTxn.wait();
 
   while (i < 10) {
     earnings = await contract.earningSoFar(streamId);

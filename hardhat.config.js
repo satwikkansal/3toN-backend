@@ -8,7 +8,7 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-          url: process.env.POLYGON_RPC,
+          url: process.env.GOERLI_RPC,
           gas: 21000000,
         },
         gas: 21000000,
@@ -20,6 +20,16 @@ module.exports = {
     },
     goerli: {
       url: process.env.GOERLI_RPC,
+      accounts: [process.env.PRIVATE_KEY_1, process.env.PRIVATE_KEY_2, process.env.PRIVATE_KEY_3],
+      gas: 2100000,
+    },
+    polygon: {
+      url: process.env.POLYGON_RPC,
+      accounts: [process.env.PRIVATE_KEY_1, process.env.PRIVATE_KEY_2, process.env.PRIVATE_KEY_3],
+      gas: 2100000,
+    },
+    optimism: {
+      url: process.env.OPTIMISM_RPC,
       accounts: [process.env.PRIVATE_KEY_1, process.env.PRIVATE_KEY_2, process.env.PRIVATE_KEY_3],
       gas: 2100000,
     }
